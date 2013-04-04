@@ -6,10 +6,10 @@ from DBUtils.PooledDB import PooledDB
 from DBUtils.PooledDB import PooledDBError
 
 
-def execute(sql):
+def execute(sql, params):
 	conn = ConnFactory.getConnection()
 	cur = conn.cursor()
-	cur.execute(sql)
+	cur.execute(sql, params)
 	dataset = cur.fetchall()
 	cur.close()
 	conn.close()
