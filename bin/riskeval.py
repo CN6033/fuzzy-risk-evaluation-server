@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
-import getopt, sys
-import dataproc
+import getopt, sys, logging
+import dataproc, configure
 
 def mainProc(v_id):
 	g_level_tree = dataproc.buildLevelTree(v_id)
@@ -19,7 +19,9 @@ def main():
 	for op, value in opts:
 		if op == "-i":
 			v_id = int(value)
-			mainProc(v_id);
+			mainProc(v_id)
+			init()
+			logging.info("Server started.")
 		elif op == "-v":
 			print("Version: 1.0.0")
 		elif op == "-h":
@@ -27,6 +29,11 @@ def main():
 
 def usage():
 	print("Use like this : ./riskeval -i 1 .")
+
+def init():
+	logging.basicConfig(filename= configure.getConf()["log_file_path"],\
+			format='%(levelname)s %(asctime)s:%(message)s', \
+			level=logging.DEBUG)
 
 if __name__ == "__main__":
 	main()
