@@ -6,7 +6,7 @@ from DBUtils.PooledDB import PooledDB
 from DBUtils.PooledDB import PooledDBError
 
 
-def execute(sql, params):
+def execute(sql, params = ()):
 	conn = ConnFactory.getConnection()
 	cur = conn.cursor()
 	cur.execute(sql, params)
@@ -32,7 +32,7 @@ class ConnFactory:
 					host=conf["host"],\
 					port=conf["port"],\
 					user=conf["user"],\
-					passwd=conf["passwd"], 
+					passwd=conf["passwd"],\
 					db=conf["db"])
 			except PooledDBError as err:
 				print("DB connection error!" + str(err))
