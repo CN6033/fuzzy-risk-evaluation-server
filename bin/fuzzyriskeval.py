@@ -1,4 +1,6 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
+
+__author__ = 'apprentice1989@gmail.com (Huang Shitao)'
 
 import getopt, sys, logging, time
 import dataproc, configure
@@ -21,6 +23,7 @@ def main():
 			v_id = int(value)
 			init()
 			logging.info("Server started.")
+			logging.info("Calculation started.")
 			time_before = time.time()
 			mainProc(v_id)
 			time_after = time.time()
