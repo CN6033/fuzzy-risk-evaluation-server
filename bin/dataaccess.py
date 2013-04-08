@@ -1,4 +1,6 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
+
+__author__ = 'apprentice1989@gmail.com (Huang Shitao)'
 
 from database import execute
 
