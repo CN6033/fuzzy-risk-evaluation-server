@@ -1,4 +1,6 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
+
+__author__ = 'apprentice1989@gmail.com (Huang Shitao)'
 
 import dataaccess
 import numpy
@@ -31,9 +33,7 @@ def buildLevelTree(v_id):
 	return _level_tree
 
 def setValue2LevelTree(v_id, level_tree={}):
-	"""
-	Get the experts' evaluations.
-	"""
+	#Get the experts' evaluations.
 	_evals = dataaccess.getEvals(v_id)
 	_classes = dataaccess.getClasses(v_id) 
 	_count = {}
@@ -42,25 +42,19 @@ def setValue2LevelTree(v_id, level_tree={}):
 	for _eval in _evals:
 		_fids.add(_eval[0])
 
-	"""
-	Initialize
-	"""
+	#Initialize
 	for _fid in _fids:
 		_count[_fid] = {}
 		_count[_fid]['total'] = 0
 		for _class in _classes:
 			_count[_fid][_class[0]] = 0
 
-	"""
-	calculate the evaluation	
-	"""
+	#calculate the evaluation
 	for _each in _evals:
 		_count[_each[0]][_each[1]] += 1
 		_count[_each[0]]["total"] += 1
 	
-	"""
-	Set the evaluations to the level tree	
-	"""
+	#Set the evaluations to the level tree
 	for _item in _count:
 		for _cla in _classes:
 			level_tree[_item]["eval"].append(float(_count[_item][_cla[0]])/float(_count[_item]["total"]))
@@ -93,12 +87,9 @@ def calculateAndSetWeight2LevelTree(v_id, level_tree = {}):
 		for _cid in level_tree[_each]["cid"]:
 			level_tree[_cid]["weight"] = _fids[_each]["result"][_new_weight_result[_cid]]
 	
-	
 
-"""
-Get all parents' id
-"""
 def getFids(level_tree = {}):
+	'''Get All parents' id.'''
 	fids = {}
 	for _id in level_tree:
 		if level_tree[_id]["cid"]:
@@ -117,7 +108,7 @@ def buildMatrixs(result = {}, fids = {}, new_weight_result = {}):
 
 def buildNewResult(weight_result = [], fids = {}, level_tree = {}):
 	result = {}
-	new_weight_result = {}#Store the sub index
+	new_weight_result = {} #Store the sub index
 	for _each in weight_result:
 		if level_tree[_each[0]]["pid"] in fids:
 			if _each[0] not in new_weight_result:
