@@ -1,4 +1,6 @@
-#! /usr/bin/python
+#!/usr/bin/env python
+
+__author__ = 'apprentice1989@gmail.com (Huang Shitao)'
 
 import ConfigParser
 import logging
@@ -7,9 +9,7 @@ DB_CONF_PATH = '../conf/db.conf'
 MAIN_CONF_PATH = '../conf/main.conf'
 
 def getDbConfig():
-	"""
-	Get the database connection configure
-	"""
+	'''Get the database connection configure'''
 	conf = {}
 	try:
 		config = ConfigParser.RawConfigParser()
@@ -30,9 +30,7 @@ def getDbConfig():
 	return conf
 
 def getConf():
-	"""
-		Get the main process' configuration.
-	"""
+	'''Get the main process' configuration.'''
 	conf = {}
 	try:
 		config = ConfigParser.RawConfigParser()
