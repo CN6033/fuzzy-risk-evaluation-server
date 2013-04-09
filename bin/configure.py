@@ -36,6 +36,7 @@ def getConf():
 		config = ConfigParser.RawConfigParser()
 		config.read(MAIN_CONF_PATH)
 		conf["log_file_path"] = config.get('main', 'log_file_path')
+		conf["port"] = config.get('server', 'port')
 	except IOError as err:
 		logging.error("Exception happened when reading the main configuration file: conf/main.conf!" + str(err))
 		exit(1)
