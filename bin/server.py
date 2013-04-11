@@ -2,7 +2,7 @@
 
 __author__ = 'apprentice1989@gmail.com (Huang Shitao)'
 
-import socket, select, threading, logging
+import socket, select, threading, logging, time
 
 def start(port = 8000):
 	serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -17,7 +17,7 @@ def start(port = 8000):
 	try:
 		connections = {}; requests = {}; responses = {}
 		while True:
-			events = epoll.poll(20)
+			events = epoll.poll(50)
 			for fileno, event in events:
 				if fileno == serversocket.fileno():
 					try:
@@ -31,22 +31,28 @@ def start(port = 8000):
 					except socket.error:
 						pass
 				elif event & select.EPOLLIN:
+					_conn_close = 0
 					try:
 						while True:
 							data = connections[fileno].recv(1024)
-							if not data: 
-								break
 							requests[fileno] += data
-					except socket.error:
+							if len(data) == 0: 
+								#Shutdown the tcp connection!
+								epoll.modify(fileno, select.EPOLLET)
+								connections[fileno].shutdown(socket.SHUT_RDWR)
+								_conn_close = 1
+								break
+					except: 
+						# The except occur only at the time when receved all of the data.
 						pass
-
+					
 					try:
-						thread = threading.Thread(target=proc, \
-								args=(requests, responses, epoll, fileno))
-						thread.start()
-						#epoll.modify(fileno, select.EPOLLOUT | select.EPOLLET)
-					except RuntimeError:
-						print "Thread runtime error!"
+						if _conn_close == 0:
+							thread = threading.Thread(target=proc, \
+									args=(requests, responses, epoll, fileno))
+							thread.start()
+					except RuntimeError as err:
+						logging.exception("RuntimeError: " + str(err))
 
 				elif event & select.EPOLLOUT:
 					try:
@@ -55,13 +61,15 @@ def start(port = 8000):
 							responses[fileno] = responses[fileno][byteswritten:]
 					except socket.error:
 						pass
+
 					if len(responses[fileno]) == 0:
-						epoll.modify(fileno, select.EPOLLET)
-						connections[fileno].shutdown(socket.SHUT_RDWR)
+						epoll.modify(fileno, select.EPOLLIN | select.EPOLLET)
+						#connections[fileno].shutdown(socket.SHUT_RDWR)
 				elif event & select.EPOLLHUP:
-					epoll.unregister(fileno)
-					connections[fileno].close()
-					del connections[fileno]
+					disconnect(requests, responses, epoll, connections, fileno)
+					#epoll.unregister(fileno)
+					#connections[fileno].close()
+					#del connections[fileno]
 	except:
 		pass
 	finally:
@@ -69,9 +77,32 @@ def start(port = 8000):
 		epoll.close()
 		serversocket.close()
 
-def proc(requests, responses, epoll, fileno):
+def proc(requests, responses, epoll, connections, fileno):
+	time.sleep(3)
 	responses[fileno] = requests[fileno]
-	epoll.modify(fileno, select.EPOLLOUT | select.EPOLLET)
+	requests[fileno] =  b''
+	try:
+		epoll.modify(fileno, select.EPOLLOUT | select.EPOLLET)
+	except ValueError as err: 
+		#When the client shutdown connection before results send back, this exception will occur.
+		logging.warning(str(err))
+		disconnect(requests, responses, epoll, connections, fileno)
+
+def disconnect(requests, responses, epoll, connections, fileno):
+	try:
+		connections[fileno].close()
+	finally:
+		epoll.unregister(fileno)
+		del connections[fileno]
+		del requests[fileno]
+		del responses[fileno]
+
+def fuzzyRiskEval(data):
+	g_level_tree = dataproc.buildLevelTree(data)
+	dataproc.setValue2LevelTree(data, g_level_tree)
+	dataproc.calculateAndSetWeight2LevelTree(data, g_level_tree)
+	g_B = dataproc.fuzzySyntheticEvaluation(data, g_level_tree)
+	print(dataproc.calculateFinalScore(data, g_B))
 
 if __name__ == "__main__":
-	start()
+	start(8001)
