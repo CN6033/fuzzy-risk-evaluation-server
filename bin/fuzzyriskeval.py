@@ -2,39 +2,30 @@
 
 __author__ = 'apprentice1989@gmail.com (Huang Shitao)'
 
-import getopt, sys, logging, time
-import dataproc, configure
-
-def mainProc(v_id):
-	g_level_tree = dataproc.buildLevelTree(v_id)
-	dataproc.setValue2LevelTree(v_id, g_level_tree)
-	dataproc.calculateAndSetWeight2LevelTree(v_id, g_level_tree)
-	g_B = dataproc.fuzzySyntheticEvaluation(v_id, g_level_tree)
-	print(dataproc.calculateFinalScore(v_id, g_B))
+import getopt, sys, logging, daemon
+import configure, server
 
 def main():
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], "hi:v", ["help", "vid="])
+		opts, args = getopt.getopt(sys.argv[1:], "hp:v", ["help", "port=","version"])
 	except getopt.GetoptError:
 		usage()
 		sys.exit(2)
 	for op, value in opts:
-		if op == "-i":
-			v_id = int(value)
+		if op == "-p":
+			port = int(value)
 			init()
-			logging.info("Server started.")
-			logging.info("Calculation started.")
-			time_before = time.time()
-			mainProc(v_id)
-			time_after = time.time()
-			logging.info("Finished! Time cost : " + str(time_after - time_before))
+			logging.info("Server is starting...")
+			with daemon.DaemonContext():
+				server.start(port)
+			#logging.info("Finished! Time cost : " + str(time_after - time_before))
 		elif op == "-v":
-			print("Version: 1.0.0")
+			print("Version: 2.0.0")
 		elif op == "-h":
 			usage()
 
 def usage():
-	print("Use like this : ./riskeval -i 1 .")
+	print("Use like this : ./riskeval [-p port].")
 
 def init():
 	logging.basicConfig(filename= configure.getConf()["log_file_path"],\
