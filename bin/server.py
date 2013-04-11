@@ -16,6 +16,7 @@ def start(port = 8000):
 
 	try:
 		connections = {}; requests = {}; responses = {}
+		__closeConn = disconnect(requests, responses, epoll, connections)
 		while True:
 			events = epoll.poll(50)
 			for fileno, event in events:
@@ -36,10 +37,11 @@ def start(port = 8000):
 						while True:
 							data = connections[fileno].recv(1024)
 							requests[fileno] += data
-							if len(data) == 0: 
-								#Shutdown the tcp connection!
-								epoll.modify(fileno, select.EPOLLET)
-								connections[fileno].shutdown(socket.SHUT_RDWR)
+							if len(data) == 0:
+								#Shutdown the connection!
+								#epoll.modify(fileno, select.EPOLLET)
+								#connections[fileno].shutdown(socket.SHUT_RDWR)
+								__closeConn(fileno)	
 								_conn_close = 1
 								break
 					except: 
@@ -49,7 +51,7 @@ def start(port = 8000):
 					try:
 						if _conn_close == 0:
 							thread = threading.Thread(target=proc, \
-									args=(requests, responses, epoll, fileno))
+									args=(requests, responses, epoll, fileno, __closeConn))
 							thread.start()
 					except RuntimeError as err:
 						logging.exception("RuntimeError: " + str(err))
@@ -66,7 +68,7 @@ def start(port = 8000):
 						epoll.modify(fileno, select.EPOLLIN | select.EPOLLET)
 						#connections[fileno].shutdown(socket.SHUT_RDWR)
 				elif event & select.EPOLLHUP:
-					disconnect(requests, responses, epoll, connections, fileno)
+					__closeConn(fileno)
 					#epoll.unregister(fileno)
 					#connections[fileno].close()
 					#del connections[fileno]
@@ -77,32 +79,35 @@ def start(port = 8000):
 		epoll.close()
 		serversocket.close()
 
-def proc(requests, responses, epoll, connections, fileno):
+def proc(requests, responses, epoll, fileno, __closeConn):
 	time.sleep(3)
-	responses[fileno] = requests[fileno]
-	requests[fileno] =  b''
 	try:
+		responses[fileno] = requests[fileno]
+		requests[fileno] =  b''
 		epoll.modify(fileno, select.EPOLLOUT | select.EPOLLET)
-	except ValueError as err: 
+	except: 
 		#When the client shutdown connection before results send back, this exception will occur.
-		logging.warning(str(err))
-		disconnect(requests, responses, epoll, connections, fileno)
+		logging.warning("The client shut down the connection before send the results back.")
+		__closeConn(fileno)
 
-def disconnect(requests, responses, epoll, connections, fileno):
-	try:
-		connections[fileno].close()
-	finally:
-		epoll.unregister(fileno)
-		del connections[fileno]
-		del requests[fileno]
-		del responses[fileno]
+def disconnect(requests, responses, epoll, connections):
+	def __closeFunc(fileno):
+		try:
+			epoll.unregister(fileno)
+			connections[fileno].close()
+			del connections[fileno]
+			del requests[fileno]
+			del responses[fileno]
+		except:
+			pass
+	return __closeFunc
 
 def fuzzyRiskEval(data):
 	g_level_tree = dataproc.buildLevelTree(data)
 	dataproc.setValue2LevelTree(data, g_level_tree)
 	dataproc.calculateAndSetWeight2LevelTree(data, g_level_tree)
 	g_B = dataproc.fuzzySyntheticEvaluation(data, g_level_tree)
-	print(dataproc.calculateFinalScore(data, g_B))
+	result = dataproc.calculateFinalScore(data, g_B)
 
 if __name__ == "__main__":
-	start(8001)
+	start(8004)
