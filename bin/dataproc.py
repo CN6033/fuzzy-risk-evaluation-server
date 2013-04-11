@@ -3,17 +3,23 @@
 __author__ = 'apprentice1989@gmail.com (Huang Shitao)'
 
 import dataaccess
-import numpy
+import numpy, json
 import ahp
 
-def buildLevelTree(v_id):
-	_level_data = dataaccess.getLevelData(v_id);
+def check(data):
+	#check the data
+	pass
+
+def buildJsonResult(result=[]):
+	pass
+
+def buildLevelTree(data):
+	_level_data = dataaccess.getLevelData(data);
 	_level_tree = {}
 	for _each in _level_data:
 		_level_node = {}
 		_level_node["id"] = _each[0]
-		_level_node["level"] = _each[1]
-		_level_node["pid"] = _each[2]
+		_level_node["pid"] = _each[1]
 		_level_node["eval"] = []
 		_level_node["weight"] = 0.0
 		_level_node["cid"] = []
@@ -32,10 +38,10 @@ def buildLevelTree(v_id):
 			
 	return _level_tree
 
-def setValue2LevelTree(v_id, level_tree={}):
+def setValue2LevelTree(data, level_tree={}):
 	#Get the experts' evaluations.
-	_evals = dataaccess.getEvals(v_id)
-	_classes = dataaccess.getClasses(v_id) 
+	_evals = dataaccess.getEvals(data)
+	_classes = dataaccess.getClasses(data) 
 	_count = {}
 	_fids = set()
 
@@ -59,7 +65,7 @@ def setValue2LevelTree(v_id, level_tree={}):
 		for _cla in _classes:
 			level_tree[_item]["eval"].append(float(_count[_item][_cla[0]])/float(_count[_item]["total"]))
 
-def fuzzySyntheticEvaluation(v_id, level_tree = {}):
+def fuzzySyntheticEvaluation(data, level_tree = {}):
 	return AoR(level_tree[-1], level_tree)
 
 def AoR(root_node={}, level_tree={}):
@@ -73,8 +79,8 @@ def AoR(root_node={}, level_tree={}):
 		root_node["eval"] = numpy.dot(_A, _R)
 	return root_node["eval"]
 
-def calculateAndSetWeight2LevelTree(v_id, level_tree = {}):
-	_weight_result = dataaccess.getWeightResult(v_id)
+def calculateAndSetWeight2LevelTree(data, level_tree = {}):
+	_weight_result = dataaccess.getWeightResult(data)
 	_fids = getFids(level_tree)
 	_result, _new_weight_result = buildNewResult(_weight_result, _fids, level_tree)
 	_matrixs = buildMatrixs(_result, _fids, _new_weight_result)
@@ -132,5 +138,5 @@ def buildNewResult(weight_result = [], fids = {}, level_tree = {}):
 				result[level_tree[_each[0]]["pid"]].append([__x, __y, _each[2]])
 	return result, new_weight_result
 
-def calculateFinalScore(v_id, weight = []):
-	return numpy.dot(weight,[each[1] for each in dataaccess.getClasses(v_id)])
+def calculateFinalScore(data, weight = []):
+	return numpy.dot(weight,[each[1] for each in dataaccess.getClasses(data)])
