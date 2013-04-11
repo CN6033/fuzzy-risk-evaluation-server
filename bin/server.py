@@ -87,7 +87,7 @@ def proc(requests, responses, epoll, fileno, __closeConn):
 		epoll.modify(fileno, select.EPOLLOUT | select.EPOLLET)
 	except: 
 		#When the client shutdown connection before results send back, this exception will occur.
-		logging.warning("The client shut down the connection before send the results back.")
+		logging.warning("The client shutdown the connection before the results send back.")
 		__closeConn(fileno)
 
 def disconnect(requests, responses, epoll, connections):
