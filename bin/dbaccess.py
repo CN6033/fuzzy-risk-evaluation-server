@@ -5,7 +5,7 @@ __author__ = 'apprentice1989@gmail.com (Huang Shitao)'
 from database import execute
 
 def getLevelData(v_id):
-	sql = "SELECT id, level, pid " \
+	sql = "SELECT id, pid " \
 	+"FROM t_level "  \
 	+ "WHERE v_id = %s"
 	params = (str(v_id))

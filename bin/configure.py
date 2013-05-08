@@ -2,13 +2,16 @@
 
 __author__ = 'apprentice1989@gmail.com (Huang Shitao)'
 
+
 import ConfigParser
 import logging
+
 
 DB_CONF_PATH = '../conf/db.conf'
 MAIN_CONF_PATH = '../conf/main.conf'
 
-def getDbConfig():
+
+def get_db_config():
 	'''Get the database connection configure'''
 	conf = {}
 	try:
@@ -29,7 +32,8 @@ def getDbConfig():
 
 	return conf
 
-def getConf():
+
+def get_conf():
 	'''Get the main process' configuration.'''
 	conf = {}
 	try:
@@ -37,6 +41,7 @@ def getConf():
 		config.read(MAIN_CONF_PATH)
 		conf["log_file_path"] = config.get('main', 'log_file_path')
 		conf["port"] = config.get('server', 'port')
+		conf["version"] = config.get('main', 'version')
 	except IOError as err:
 		logging.error("Exception happened when reading the main configuration file: conf/main.conf!" + str(err))
 		exit(1)

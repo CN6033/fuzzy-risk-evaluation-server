@@ -2,12 +2,19 @@
 
 __author__ = 'apprentice1989@gmail.com (Huang Shitao)'
 
-import getopt, sys, logging, daemon
-import configure, server
+
+import getopt
+import sys
+import logging
+import daemon
+import configure
+import server
+
 
 def main():
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], "hp:v", ["help", "port=","version"])
+		opts, args = getopt.getopt(sys.argv[1:], "hp:v", \
+                ["help", "port=", "version"])
 	except getopt.GetoptError:
 		usage()
 		sys.exit(2)
@@ -20,17 +27,20 @@ def main():
 				server.start(port)
 			#logging.info("Finished! Time cost : " + str(time_after - time_before))
 		elif op == "-v":
-			print("Version: 2.0.0")
+			print("Version:" + configure.get_conf()["version"])
 		elif op == "-h":
 			usage()
+
 
 def usage():
 	print("Use like this : ./riskeval [-p port].")
 
+
 def init():
-	logging.basicConfig(filename= configure.getConf()["log_file_path"],\
-			format='%(levelname)s %(asctime)s:%(message)s', \
-			level=logging.DEBUG)
+	logging.basicConfig(filename=configure.get_conf()["log_file_path"],\
+						format='%(levelname)s %(asctime)s:%(message)s',\
+						level=logging.DEBUG)
+
 
 if __name__ == "__main__":
 	main()
