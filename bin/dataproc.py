@@ -2,6 +2,9 @@
 
 __author__ = 'apprentice1989@gmail.com (Huang Shitao)'
 
+'''
+This module implements the main calculate process.
+'''
 
 from dataaccess import DataAccess
 import numpy
@@ -22,7 +25,10 @@ class DataProc:
 		_calculate_and_set_weight2level_tree()
 		weights = _fuzzy_synthetic_evaluation()
 		result = _calculate_final_score(weights)
-        return result
+        res = {}
+        res["_result"] = result
+        res["_errorno"] = 0
+        return res
 
 
 	def _build_level_tree():

@@ -1,19 +1,34 @@
-#! /usr/bin/python
+#! /usr/bin/env python
 
 import configure
 import MySQLdb
 from DBUtils.PooledDB import PooledDB
 from DBUtils.PooledDB import PooledDBError
+from contextlib import contextmanager
 
-
+@contextmanager
 def execute(sql, params = ()):
 	conn = ConnFactory.getConnection()
 	cur = conn.cursor()
-	cur.execute(sql, params)
-	dataset = cur.fetchall()
-	cur.close()
-	conn.close()
-	return dataset
+    try:
+	    cur.execute(sql, params)
+	    dataset = cur.fetchall()
+        yield dataset
+    finally:
+	    cur.close()
+	    conn.close()
+
+
+@contextmanager
+def execute_update(sql, params = ()):
+	conn = ConnFactory.getConnection()
+	cur = conn.cursor()
+    try:
+	    cur.execute(sql, params)
+    finally:
+	    cur.close()
+	    conn.close()
+
 
 class ConnFactory:
 
@@ -23,6 +38,7 @@ class ConnFactory:
 		if self.__class__ == ConnFactorty:
 			raise NotImplementedError("abstract")
 	
+
 	@staticmethod
 	def getConnection():
 		if ConnFactory.conn_pool is None:

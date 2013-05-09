@@ -113,13 +113,5 @@ def disconnect(requests, responses, epoll, connections):
     return close_conn
 
 
-def fuzzy_risk_eval_calculate(data):
-    g_level_tree = dataproc.build_level_tree(data)
-    dataproc.set_value2level_tree(data, g_level_tree)
-    dataproc.calculate_and_set_weight2level_tree(data, g_level_tree)
-    g_B = dataproc.fuzzy_synthetic_evaluation(data, g_level_tree)
-    result = dataproc.calculate_final_score(data, g_B)
-
-
 if __name__ == "__main__":
     start(8004)

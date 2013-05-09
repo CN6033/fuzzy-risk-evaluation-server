@@ -2,34 +2,42 @@
 
 __author__ = 'apprentice1989@gmail.com (Huang Shitao)'
 
+'''
+The data persistent module.
+'''
+
 from database import execute
+from database import execute_update
+import uuid
+import json
 
-def getLevelData(v_id):
-	sql = "SELECT id, pid " \
-	+"FROM t_level "  \
-	+ "WHERE v_id = %s"
-	params = (str(v_id))
-	return execute(sql, params)
 
-def getEvals(v_id):
-	sql = "SELECT t1.fid, t1.cid "\
-			+" FROM t_eval_res t1, t_class t2 "\
-			+" WHERE t2.v_id = %s"\
-			+" AND t1.cid = t2.id ;"
-	params = (str(v_id))
-	return execute(sql, params)
+def get_data(v_id, user):
+    if v_id is None:
+        return None
+    sql = "SELECT t1.vid, t1.data"\
+           + " FROM t_data t1, t_user t2, t_user_data t3"\
+           + " WHERE t2.username = %s"\
+           + " AND t2.id = t3.userid"\
+           + " AND t1.id = t3.dataid"\
+           + " AND t1.vid = %s"
+    params = (user, str(v_id))
+    with execute(sql, params) as dataset:
+        return dataset
 
-def getClasses(v_id):
-	sql = "SELECT id, value"\
-			+" FROM t_class"\
-			+" WHERE v_id = %s"\
-			+" ORDER BY value DESC"
-	params = (str(v_id))
-	return execute(sql, params)
+        
+def store_data(req, user):
+    req["_id"] = generate_vid()
+    req_str = json.dumps(req)
+    sql = "START TRANSACTION;"
+        + "INSERT INTO t_data(vid, data) VALUES(%s, %s);"
+        + "SELECT @A:= LAST_INSERT_ID();"
+        + "INSERT INTO t_user_data (userid, dataid) SELECT id, @A FROM t_user WHERE username = %s;"
+        + "COMMIT;"
+    params = (req["_id"], req_str, user)
+    with execute_update(sql, params):
+        pass
 
-def getWeightResult(v_id):
-	sql = "SELECT fid1, fid2, value" \
-			+" FROM t_weight_res"\
-			+" WHERE v_id= %s"
-	params = (str(v_id))
-	return execute(sql, params)
+
+def generate_vid():
+    return str(uuid.uuid1().int)
