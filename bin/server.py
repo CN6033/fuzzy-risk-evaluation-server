@@ -1,6 +1,12 @@
-#!/usr/bin/env python
+#! /usr/bin/env python
+#coding=utf-8
 
-__author__ = 'apprentice1989@gmail.com (Huang Shitao)'
+'''
+本模块主要完成网络I/O。
+使用了Epoll + 多线程模型来提高TCP并发连接数 
+'''
+
+__author__ = 'hstaos@gmail.com (Huang Shitao)'
 
 import socket
 import select
@@ -9,7 +15,7 @@ import logging
 import time
 
 
-def start(port=8000):
+def start(port = 8000):
     serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     serversocket.bind(('0.0.0.0', port))
@@ -23,7 +29,7 @@ def start(port=8000):
         connections = {}
         requests = {}
         responses = {}
-        close_conn = disconnect(requests, responses, epoll, connections)
+        __closeConn = disconnect(requests, responses, epoll, connections)
         while True:
             events = epoll.poll(50)
             for fileno, event in events:
@@ -48,15 +54,15 @@ def start(port=8000):
                                 #Shutdown the connection!
                                 #epoll.modify(fileno, select.EPOLLET)
                                 #connections[fileno].shutdown(socket.SHUT_RDWR)
-                                close_conn(fileno)  
+                                __closeConn(fileno)
                                 is_conn_close = True
                                 break
-                    except: 
-                        # The except occur only at the time when received all of the data.
+                    except:
+                        # The except occur only at the time when receved all of the data.
                         pass
-                    
+
                     try:
-                        if is_conn_close is True:
+                        if is_conn_close is False:
                             thread = threading.Thread(target=proc, \
                                     args=(requests, responses, epoll, fileno, __closeConn))
                             thread.start()
@@ -75,7 +81,7 @@ def start(port=8000):
                         epoll.modify(fileno, select.EPOLLIN | select.EPOLLET)
                         #connections[fileno].shutdown(socket.SHUT_RDWR)
                 elif event & select.EPOLLHUP:
-                    close_conn(fileno)
+                    __closeConn(fileno)
                     #epoll.unregister(fileno)
                     #connections[fileno].close()
                     #del connections[fileno]
@@ -87,21 +93,21 @@ def start(port=8000):
         serversocket.close()
 
 
-def proc(requests, responses, epoll, fileno, close_conn):
+def proc(requests, responses, epoll, fileno, __closeConn):
     time.sleep(3)
     try:
         responses[fileno] = requests[fileno]
         requests[fileno] = b''
         epoll.modify(fileno, select.EPOLLOUT | select.EPOLLET)
     except:
-        #When the client shutdown connection before results send back,
-        #this exception will occur.
+        #When the client shutdown connection before results send back, this exception will occur.
         logging.warning("The client shutdown the connection before the results send back.")
-        close_conn(fileno)
+        __closeConn(fileno)
 
 
 def disconnect(requests, responses, epoll, connections):
-    def close_conn(fileno):
+
+    def __closeFunc(fileno):
         try:
             epoll.unregister(fileno)
             connections[fileno].close()
@@ -110,7 +116,7 @@ def disconnect(requests, responses, epoll, connections):
             del responses[fileno]
         except:
             pass
-    return close_conn
+    return __closeFunc
 
 
 if __name__ == "__main__":

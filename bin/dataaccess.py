@@ -1,58 +1,63 @@
-#!/usr/bin/env python
-
-__author__ = 'apprentice1989@gmail.com (Huang Shitao)'
-
+#! /usr/bin/env python
+#coding=utf-8
 
 '''
-This module check whether the raw data's form is correct,
-And transform the raw data form in order to match the  'dataproc' module needs.
+本模块实现从原始数据转换成'dataproc'模块所需格式数据的功能。
+同时，也提供了原始数据完整性和正确性的检查（注：此功能暂未完全实现）。
 '''
+
+__author__ = 'hstaos@gmail.com (Huang Shitao)'
+
 
 import logging
 
+
 class DataAccess:
+
     def __init__(self, _raw):
         if 0 > check(_raw):
             logging.warning("The raw data is bad.")
             raise ValueError("The raw data is bad.")
         self.raw = _raw
 
-    
-    def get_level_data():
+    def get_level_data(self):
+        data = []
         for _level in self.raw["_def"]["_level"]:
-            yield (_level["_id"], _level["_pid"])
+            data.append((_level["_id"], _level["_pid"]))
+        return data
 
-
-    def get_evals():
+    def get_evals(self):
+        data = []
         for _eval in self.raw["_res"]["_eval"]:
-            yield (_eval["_level_id"], _eval["_class_id"])
+            data.append((_eval["_level_id"], _eval["_class_id"]))
+        return data
 
-
-    def get_classes():
+    def get_classes(self):
+        data = []
         for _class in self.raw["_def"]["_class"]:
-            yield (_class["_id"], _class["_value"])
+            data.append((_class["_id"], _class["_value"]))
+        return data
 
-
-    def get_weight_result():
+    def get_weight_result(self):
+        data = []
         for _weight in self.raw["_res"]["_weight"]:
-            yield (_weight["_level_id1"], _weight["_level_id2"], _weight["_value"])
+            data.append((_weight["_level_id1"], _weight["_level_id2"], _weight["_value"]))
+        return data
 
 
 def check(raw):
     '''Check the data before calculate.'''
     if raw is None:
-       return -1
+        return -1
     try:
-        if None == self.raw["_def"]["_level"]:
+        if None == raw["_def"]["_level"]:
             return -1
-        if None == self.raw["_def"]["_class"]:
+        if None == raw["_def"]["_class"]:
             return -1
-        if None == self.raw["_res"]["_eval"]:
+        if None == raw["_res"]["_eval"]:
             return -1
-        if None == self.raw["_res"]["_weight"]:
+        if None == raw["_res"]["_weight"]:
             return -1
     except:
         return -1
-    
     return 0
-

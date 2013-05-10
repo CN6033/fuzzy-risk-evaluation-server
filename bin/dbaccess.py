@@ -1,13 +1,13 @@
-#!/usr/bin/env python
-
-__author__ = 'apprentice1989@gmail.com (Huang Shitao)'
+#! /usr/bin/env python
+#coding=utf-8
 
 '''
-The data persistent module.
+本模块实现数据的持久化。
 '''
+
+__author__ = 'hstaos@gmail.com (Huang Shitao)'
 
 from database import execute
-from database import execute_update
 import uuid
 import json
 
@@ -25,17 +25,17 @@ def get_data(v_id, user):
     with execute(sql, params) as dataset:
         return dataset
 
-        
+
 def store_data(req, user):
     req["_id"] = generate_vid()
     req_str = json.dumps(req)
-    sql = "START TRANSACTION;"
-        + "INSERT INTO t_data(vid, data) VALUES(%s, %s);"
-        + "SELECT @A:= LAST_INSERT_ID();"
-        + "INSERT INTO t_user_data (userid, dataid) SELECT id, @A FROM t_user WHERE username = %s;"
+    sql = "START TRANSACTION;"\
+        + "INSERT INTO t_data(vid, data) VALUES(%s, %s);"\
+        + "SELECT @A:= LAST_INSERT_ID();"\
+        + "INSERT INTO t_user_data (userid, dataid) SELECT id, @A FROM t_user WHERE username = %s;"\
         + "COMMIT;"
     params = (req["_id"], req_str, user)
-    with execute_update(sql, params):
+    with execute(sql, params):
         pass
 
 
