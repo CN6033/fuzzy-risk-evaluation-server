@@ -22,152 +22,172 @@ import numpy
 import ahp
 
 
-class DataProc:
-    _level_tree = {}
+class ElementTree:
+    nodes = {}
 
-    def __init__(self, raw):
-        self._data_access = DataAccess(raw)
+    def __init__(self, elements):
+        '''初始化树结构'''
+        for _each in elements:
+            node = {}
+            node["id"] = _each[0]
+            node["pid"] = _each[1]
+            node["eval"] = []
+            node["weight"] = 0.0
+            node["cid"] = []
+            self.nodes[node["id"]] = node
+        root = {}
+        root["id"] = -1
+        root["pid"] = None
+        root["eval"] = []
+        root["cid"] = []
+        self.nodes[root["id"]] = root
 
-    def start(self):
-        '''本方法控制模糊综合评估算法的执行顺序'''
-        self._build_level_tree()
-        self._set_value2level_tree()
-        self._calculate_and_set_weight2level_tree()
-        weights = self._fuzzy_synthetic_evaluation()
-        result = self._calculate_final_score(weights)
-        res = {}
-        res["_result"] = result
-        res["_errorno"] = 0
-        return res
+        # 建立各个节点间的父子关系
+        for _item in self.nodes:
+            if self.nodes[_item]["pid"] is not None:
+                self.nodes[self.nodes[_item]["pid"]]["cid"].append(_item)
 
-    def _build_level_tree(self):
-        '''创建并初始化树结构'''
-        _level_data = self._data_access.get_level_data()
-        for _each in _level_data:
-            _level_node = {}
-            _level_node["id"] = _each[0]
-            _level_node["pid"] = _each[1]
-            _level_node["eval"] = []
-            _level_node["weight"] = 0.0
-            _level_node["cid"] = []
-            self._level_tree[_level_node["id"]] = _level_node
-        _root_node = {}
-        _root_node["id"] = -1
-        _root_node["pid"] = None
-        _root_node["eval"] = []
-        _root_node["cid"] = []
-        self._level_tree[_root_node["id"]] = _root_node
+    def set_membership_grade(self, grades):
+        for _each in grades:
+            self.nodes[_each]["eval"] = grades[_each]
 
-        for _item in self._level_tree:
-            if self._level_tree[_item]["pid"] is not None:
-                self._level_tree[self._level_tree[_item]["pid"]]["cid"].append(_item)
+    def set_weight(self, weights):
+        for weight in weights:
+            self.nodes[weight[0]]["weight"] = weight[1]
 
-    def _set_value2level_tree(self):
-        '''
-        计算并将专家评估值赋值给相关节点。（注：仅有叶子节点有专家评估值，
-        也就是说专家只对叶子节点所对应的安全因素进行打分。
-        '''
-        # Get the experts' evaluations.
-        _evals = self._data_access.get_evals()
-        # Get the evaluation classes.
-        _classes = self._data_access.get_classes()
-        _count = {}
+    def get_pids(self):
+        '''Get all parents' ids.'''
+        pids = {}
+        for _id in self.nodes:
+            if self.nodes[_id]["cid"]:
+                pids[_id] = {}
+                pids[_id]["count"] = 0
+                pids[_id]["result"] = []
+        return pids
 
-        # _fids store the unique tree node.
-        _fids = set()
-        for _eval in _evals:
-            _fids.add(_eval[0])
+    def get_nodes(self):
+        return self.nodes
 
-        # Initialize the count.
-        for _fid in _fids:
-            _count[_fid] = {}
-            _count[_fid]["total"] = 0
-            for _class in _classes:
-                _count[_fid][_class[0]] = 0
-
-        #calculate the evaluation
-        for _each in _evals:
-            _count[_each[0]][_each[1]] += 1
-            _count[_each[0]]["total"] += 1
-
-        #Set the evaluations to the level tree
-        for _item in _count:
-            for _cla in _classes:
-                eval = _count[_item][_cla[0]]/float(_count[_item]["total"])
-                self._level_tree[_item]["eval"].append(eval)
-
-    def _fuzzy_synthetic_evaluation(self):
+    def fuzzy_synthetic_evaluation(self):
         '''模糊综合评估法'''
-        return self._AoR(self._level_tree[-1])
+        return self.AoR(self.nodes[-1])
 
-    def _AoR(self, root_node={}):
-        if root_node["cid"]:
+    def AoR(self, root={}):
+        if root["cid"]:
             _A = []
             _R = []
-            for _cid in root_node["cid"]:
-                _A.append(self._level_tree[_cid]["weight"])
-                _r = self._AoR(self._level_tree[_cid])
+            for _cid in root["cid"]:
+                _A.append(self.nodes[_cid]["weight"])
+                _r = self.AoR(self.nodes[_cid])
                 _R.append(_r)
-            root_node["eval"] = numpy.dot(_A, _R)
-        return root_node["eval"]
+            root["eval"] = numpy.dot(_A, _R)
+        return root["eval"]
 
-    def _calculate_and_set_weight2level_tree(self):
-        '''调用层次分析法来计算各个树节点的权值。'''
-        _weight_result = self._data_access.get_weight_result()
-        _fids = self._get_fids()
-        _result, _new_weight_result = self._build_new_result(_weight_result, _fids)
-        _matrixs = self._build_matrixs(_result, _fids, _new_weight_result)
-        for _item in _matrixs:
-            weight, eigenvalues, eigenvector = ahp.calculate_weight(_matrixs[_item])
-            _fids[_item]["result"] = weight
 
-        for _each in _fids:
-            for _cid in self._level_tree[_each]["cid"]:
-                self._level_tree[_cid]["weight"] = _fids[_each]["result"][_new_weight_result[_cid]]
+def proc(raw):
+    dataaccess = DataAccess(raw)
 
-    def _get_fids(self):
-        '''Get all parents' id.'''
-        fids = {}
-        for _id in self._level_tree:
-            if self._level_tree[_id]["cid"]:
-                fids[_id] = {}
-                fids[_id]["count"] = 0
-                fids[_id]["result"] = []
-        return fids
+    elements = dataaccess.get_level_data()
+    evals = dataaccess.get_evals()
+    classes = dataaccess.get_classes()
+    relative_weights = dataaccess.get_weight_result()
+    
+    mem_grades = cal_membership_grade(evals, classes)
 
-    def _build_matrixs(self, result={}, fids={}, new_weight_result={}):
-        matrixs = {}
-        for _each in result:
-            matrixs[_each] = numpy.ones(shape=(fids[_each]["count"], fids[_each]["count"]))
-            for _item in result[_each]:
-                matrixs[_each][_item[0]][_item[1]] = float(_item[2])
-        return matrixs
+    tree = ElementTree(elements)
+    tree.set_membership_grade(mem_grades)
+    weights = calculate_weight(relative_weights, tree.get_pids(), tree.get_nodes())
+    tree.set_weight(weights)
+    final_weight = tree.fuzzy_synthetic_evaluation()
+    final_score = calculate_final_score(final_weight, classes)
+    res = {}
+    res["_result"] = final_score
+    res["_errorno"] = 0
+    return res
 
-    def _build_new_result(self, weight_result=[], fids={}):
-        result = {}
-        #Store the sub index
-        new_weight_result = {}
-        for _each in weight_result:
-            if self._level_tree[_each[0]]["pid"] in fids:
-                if _each[0] not in new_weight_result:
-                    __x = fids[self._level_tree[_each[0]]["pid"]]["count"]
-                    new_weight_result[_each[0]] = __x
-                    fids[self._level_tree[_each[0]]["pid"]]["count"] += 1
-                else:
-                    __x = new_weight_result[_each[0]]
 
-                if _each[1] not in new_weight_result:
-                    __y = fids[self._level_tree[_each[1]]["pid"]]["count"]
-                    new_weight_result[_each[1]] = __y
-                    fids[self._level_tree[_each[1]]["pid"]]["count"] += 1
-                else:
-                    __y = new_weight_result[_each[1]]
-                if self._level_tree[_each[0]]["pid"] in result:
-                    result[self._level_tree[_each[0]]["pid"]].append([__x, __y, _each[2]])
-                else:
-                    result[self._level_tree[_each[0]]["pid"]] = []
-                    result[self._level_tree[_each[0]]["pid"]].append([__x, __y, _each[2]])
-        return result, new_weight_result
+def calculate_final_score(final_weight, classes):
+        return numpy.dot(final_weight, [each[1] for each in classes])
 
-    def _calculate_final_score(self, weights=[]):
-        return numpy.dot(weights, [each[1] for each in self._data_access.get_classes()])
+
+def cal_membership_grade(evals, classes):
+    '''
+    根据专家对叶子因素的安全级别打分，计算每个因素的隶属度。
+    （注：仅有叶子节点有专家评估值，也就是说专家只对叶子节点
+    所对应的安全因素进行打分。）
+    '''
+    # uni_ids store the unique element id.
+    uni_ids = set()
+    for _eval in evals:
+        uni_ids.add(_eval[0])
+
+    count = {}
+    # Initialize the count.
+    for _id in uni_ids:
+        count[_id] = {}
+        count[_id]["total"] = 0
+        for _class in classes:
+            count[_id][_class[0]] = 0
+
+    for _each in evals:
+        count[_each[0]][_each[1]] += 1
+        count[_each[0]]["total"] += 1
+
+    mem_grades = {}
+    for _item in count:
+        mem_grades[_item] = []
+        for _cla in classes:
+            eval = count[_item][_cla[0]]/float(count[_item]["total"])
+            mem_grades[_item].append(eval)
+    return mem_grades
+
+
+def calculate_weight(relative_weights, pids, nodes):
+    '''调用层次分析法来计算各个树节点的权值。'''
+    _result, _new_weight_result = build_new_result(relative_weights, pids, nodes)
+    _matrixs = build_matrixs(_result, pids, _new_weight_result)
+    for _item in _matrixs:
+        weight, eigenvalues, eigenvector = ahp.calculate_weight(_matrixs[_item])
+        pids[_item]["result"] = weight
+
+    weights = []
+    for _each in pids:
+        for _cid in nodes[_each]["cid"]:
+            weights.append((nodes[_cid]["id"], pids[_each]["result"][_new_weight_result[_cid]]))
+    return weights
+
+
+def build_new_result(relative_weights, pids, nodes):
+    result = {}
+    #Store the sub index
+    new_weight_result = {}
+    for _each in relative_weights:
+        if nodes[_each[0]]["pid"] in pids:
+            if _each[0] not in new_weight_result:
+                __x = pids[nodes[_each[0]]["pid"]]["count"]
+                new_weight_result[_each[0]] = __x
+                pids[nodes[_each[0]]["pid"]]["count"] += 1
+            else:
+                __x = new_weight_result[_each[0]]
+
+            if _each[1] not in new_weight_result:
+                __y = pids[nodes[_each[1]]["pid"]]["count"]
+                new_weight_result[_each[1]] = __y
+                pids[nodes[_each[1]]["pid"]]["count"] += 1
+            else:
+                __y = new_weight_result[_each[1]]
+            if nodes[_each[0]]["pid"] in result:
+                result[nodes[_each[0]]["pid"]].append([__x, __y, _each[2]])
+            else:
+                result[nodes[_each[0]]["pid"]] = []
+                result[nodes[_each[0]]["pid"]].append([__x, __y, _each[2]])
+    return result, new_weight_result
+
+
+def build_matrixs(result={}, pids={}, new_weight_result={}):
+    matrixs = {}
+    for _each in result:
+        matrixs[_each] = numpy.ones(shape=(pids[_each]["count"], pids[_each]["count"]))
+        for _item in result[_each]:
+            matrixs[_each][_item[0]][_item[1]] = float(_item[2])
+    return matrixs
