@@ -8,7 +8,7 @@
 __author__ = 'hstaos@gmail.com (Huang Shitao)'
 
 import json
-from dataproc import DataProc
+import dataproc
 import dbaccess
 
 
@@ -34,8 +34,7 @@ class JobControl:
                 self._store_data_to_db(req, self.user)
 
             try:
-                proc = DataProc(req)
-                res = proc.start()
+                res = dataproc.proc(req)
                 res["vid"] = req["_id"]
                 self.response.append(res)
             except ValueError:
