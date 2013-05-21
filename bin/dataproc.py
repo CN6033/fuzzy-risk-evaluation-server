@@ -4,10 +4,11 @@
 '''
 本模块实现模糊综合评估算法的计算。
 信息安全因素层次划分表采用树数据结构来保存。
-每个因素分别对应输结构中的一个节点。
+每个因素分别对应树结构中的一个节点。
 
 节点格式说明如下：
-{id: 标识符,
+{
+ id: 标识符,
  pid: 父节点id,
  eval: 专家评价值,
  weight: 权重值,
@@ -56,7 +57,7 @@ class ElementTree:
             self.nodes[weight[0]]["weight"] = weight[1]
 
     def get_pids(self):
-        '''Get all parents' ids.'''
+        '''获取所有父节点ID（即所有有子节点的节点）。'''
         pids = {}
         for _id in self.nodes:
             if self.nodes[_id]["cid"]:
@@ -91,9 +92,8 @@ def proc(raw):
     evals = dataaccess.get_evals()
     classes = dataaccess.get_classes()
     relative_weights = dataaccess.get_weight_result()
-    
-    mem_grades = cal_membership_grade(evals, classes)
 
+    mem_grades = calculate_membership_grade(evals, classes)
     tree = ElementTree(elements)
     tree.set_membership_grade(mem_grades)
     weights = calculate_weight(relative_weights, tree.get_pids(), tree.get_nodes())
@@ -103,6 +103,7 @@ def proc(raw):
     res = {}
     res["_result"] = final_score
     res["_errorno"] = 0
+
     return res
 
 
@@ -110,7 +111,7 @@ def calculate_final_score(final_weight, classes):
         return numpy.dot(final_weight, [each[1] for each in classes])
 
 
-def cal_membership_grade(evals, classes):
+def calculate_membership_grade(evals, classes):
     '''
     根据专家对叶子因素的安全级别打分，计算每个因素的隶属度。
     （注：仅有叶子节点有专家评估值，也就是说专家只对叶子节点
@@ -153,7 +154,8 @@ def calculate_weight(relative_weights, pids, nodes):
     weights = []
     for _each in pids:
         for _cid in nodes[_each]["cid"]:
-            weights.append((nodes[_cid]["id"], pids[_each]["result"][_new_weight_result[_cid]]))
+            weights.append((nodes[_cid]["id"],
+                        pids[_each]["result"][_new_weight_result[_cid]]))
     return weights
 
 
@@ -176,6 +178,7 @@ def build_new_result(relative_weights, pids, nodes):
                 pids[nodes[_each[1]]["pid"]]["count"] += 1
             else:
                 __y = new_weight_result[_each[1]]
+
             if nodes[_each[0]]["pid"] in result:
                 result[nodes[_each[0]]["pid"]].append([__x, __y, _each[2]])
             else:
@@ -184,7 +187,10 @@ def build_new_result(relative_weights, pids, nodes):
     return result, new_weight_result
 
 
-def build_matrixs(result={}, pids={}, new_weight_result={}):
+def build_matrixs(result, pids, new_weight_result):
+    assert isinstance(result, dict)
+    assert isinstance(pids, dict)
+    assert isinstance(new_weight_result, dict)
     matrixs = {}
     for _each in result:
         matrixs[_each] = numpy.ones(shape=(pids[_each]["count"], pids[_each]["count"]))

@@ -18,7 +18,8 @@ __author__ = 'hstaos@gmail.com (Huang Shitao)'
 import numpy as np
 
 
-def calculate_weight(pairwises=[]):
+def calculate_weight(pairwises):
+    assert isinstance(pairwises, np.ndarray)
     # Define vector of weight based on eigenvector and eigenvalues
     eigenvalues, eigenvector = np.linalg.eig(pairwises)
     maxindex = np.argmax(eigenvalues)
@@ -33,12 +34,12 @@ def calculate_weight(pairwises=[]):
 
 
 def consistency(weights, eigenvalues):
-    '''Calculete Consistency index in accord with Saaty (1977)'''
+    '''Calculete Consistency index in accord with Saaty (1977).'''
     #order of matrix: 0,1,2,3,4,5,6,7,8
     RI = [0.00, 0.00, 0.00, 0.52, 0.90, 1.12, 1.24, 1.32, 1.41]
     order = len(weights)
     CI = (np.max(eigenvalues) - order) / (order - 1)
-    return CI / RI[order - 1]
+    return CI, CI / RI[order - 1]
 
 
 def test():
@@ -48,7 +49,7 @@ def test():
     # [1/3.0,1/5.0,2.0,1.0,1.0],[1/3.0,1/5.0,3.0,1.0,1.0]]
     pairwises = [[1, 4.0], [1 / 4.0, 1]]
     weights, eigenvalues, eigenvector = calculate_weight(pairwises)
-    consistent = consistency(weights, eigenvalues)
+    ci, consistent = consistency(weights, eigenvalues)
     print(weights)
     print(consistent)
 

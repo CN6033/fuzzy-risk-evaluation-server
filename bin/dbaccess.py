@@ -2,7 +2,7 @@
 #coding=utf-8
 
 '''
-本模块实现数据的持久化。
+# 本模块实现数据的持久化。
 '''
 
 __author__ = 'hstaos@gmail.com (Huang Shitao)'
@@ -32,7 +32,8 @@ def store_data(req, user):
     sql = "START TRANSACTION;"\
         + "INSERT INTO t_data(vid, data) VALUES(%s, %s);"\
         + "SELECT @A:= LAST_INSERT_ID();"\
-        + "INSERT INTO t_user_data (userid, dataid) SELECT id, @A FROM t_user WHERE username = %s;"\
+        + "INSERT INTO t_user_data (userid, dataid) SELECT id, @A "\
+        + "FROM t_user WHERE username = %s;"\
         + "COMMIT;"
     params = (req["_id"], req_str, user)
     with execute(sql, params):
@@ -40,4 +41,5 @@ def store_data(req, user):
 
 
 def generate_vid():
+    '''给每次评估生成一个唯一的ID.'''
     return str(uuid.uuid1().int)

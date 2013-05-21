@@ -3,7 +3,7 @@
 
 '''
 本模块主要完成网络I/O。
-使用了Epoll + 多线程模型来提高TCP并发连接数 
+使用了Epoll + 多线程模型来提高TCP并发连接数
 '''
 
 __author__ = 'hstaos@gmail.com (Huang Shitao)'
@@ -12,7 +12,7 @@ import socket
 import select
 import threading
 import logging
-import time
+import jobcontrol
 
 
 def start(port = 8000):
@@ -94,9 +94,14 @@ def start(port = 8000):
 
 
 def proc(requests, responses, epoll, fileno, __closeConn):
-    time.sleep(3)
     try:
-        responses[fileno] = requests[fileno]
+        try:
+            job = jobcontrol.JobControl(requests[fileno])
+            result = job.start()
+            responses[fileno] = result
+        except ValueError as verr:
+            logging.warning(verr)
+            responses[fileno] = 'Empty data!'
         requests[fileno] = b''
         epoll.modify(fileno, select.EPOLLOUT | select.EPOLLET)
     except:

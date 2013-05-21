@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+#! /usr/bin/env python
+#coding=utf-8
 
 __author__ = 'hstaos@gmail.com (Huang Shitao)'
 
@@ -22,8 +23,8 @@ def main():
             port = int(value)
             init()
             logging.info("Server is starting...")
-            with daemon.DaemonContext():
-                server.start(port)
+            #with daemon.DaemonContext():
+            server.start(port)
         elif op == "-v":
             print("Version:" + configure.get_conf()["version"])
         elif op == "-h":

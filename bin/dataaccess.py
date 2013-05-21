@@ -46,7 +46,7 @@ class DataAccess:
 
 
 def check(raw):
-    '''Check the data before calculate.'''
+    '''检查原始数据的正确性和完整性'''
     if raw is None:
         return -1
     try:
