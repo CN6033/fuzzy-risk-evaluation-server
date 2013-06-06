@@ -13,13 +13,12 @@ import dbaccess
 
 
 class JobControl:
-    requests = []
-    response = []
 
     def __init__(self, _request):
         request = json.loads(_request)
         self.requests = request["_data"]
         self.user = request["_user"]
+        self.response = []
         if not isinstance(self.requests, list):
             raise ValueError("There is no data in the request object!")
 

@@ -29,7 +29,7 @@ def start(port = 8000):
         connections = {}
         requests = {}
         responses = {}
-        __closeConn = disconnect(requests, responses, epoll, connections)
+
         while True:
             events = epoll.poll(50)
             for fileno, event in events:
@@ -54,7 +54,7 @@ def start(port = 8000):
                                 #Shutdown the connection!
                                 #epoll.modify(fileno, select.EPOLLET)
                                 #connections[fileno].shutdown(socket.SHUT_RDWR)
-                                __closeConn(fileno)
+                                disconnect(fileno, requests, responses, epoll, connections)
                                 is_conn_close = True
                                 break
                     except:
@@ -64,7 +64,7 @@ def start(port = 8000):
                     try:
                         if is_conn_close is False:
                             thread = threading.Thread(target=proc, \
-                                    args=(requests, responses, epoll, fileno, __closeConn))
+                                    args=(fileno, requests, responses, epoll, connections))
                             thread.start()
                     except RuntimeError as err:
                         logging.exception("RuntimeError: " + str(err))
@@ -81,10 +81,7 @@ def start(port = 8000):
                         epoll.modify(fileno, select.EPOLLIN | select.EPOLLET)
                         #connections[fileno].shutdown(socket.SHUT_RDWR)
                 elif event & select.EPOLLHUP:
-                    __closeConn(fileno)
-                    #epoll.unregister(fileno)
-                    #connections[fileno].close()
-                    #del connections[fileno]
+                    disconnect(fileno, requests, responses, epoll, connections)
     except:
         pass
     finally:
@@ -93,7 +90,7 @@ def start(port = 8000):
         serversocket.close()
 
 
-def proc(requests, responses, epoll, fileno, __closeConn):
+def proc(fileno, requests, responses, epoll, connections):
     try:
         try:
             job = jobcontrol.JobControl(requests[fileno])
@@ -107,21 +104,18 @@ def proc(requests, responses, epoll, fileno, __closeConn):
     except:
         #When the client shutdown connection before results send back, this exception will occur.
         logging.warning("The client shutdown the connection before the results send back.")
-        __closeConn(fileno)
+        disconnect(fileno, requests, responses, epoll, connections)
 
 
-def disconnect(requests, responses, epoll, connections):
-
-    def __closeFunc(fileno):
-        try:
-            epoll.unregister(fileno)
-            connections[fileno].close()
-            del connections[fileno]
-            del requests[fileno]
-            del responses[fileno]
-        except:
-            pass
-    return __closeFunc
+def disconnect(fileno, requests, responses, epoll, connections):
+    try:
+        epoll.unregister(fileno)
+        connections[fileno].close()
+    except:
+        pass
+    del connections[fileno]
+    del requests[fileno]
+    del responses[fileno]
 
 
 if __name__ == "__main__":
