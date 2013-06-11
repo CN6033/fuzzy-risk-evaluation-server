@@ -24,9 +24,9 @@ import ahp
 
 
 class ElementTree:
-    nodes = {}
 
     def __init__(self, elements):
+        self.nodes = {}
         '''初始化树结构'''
         for _each in elements:
             node = {}
